@@ -81,12 +81,9 @@
         
         #mobile-controls {
             display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            right: 0;
             justify-content: center;
             align-items: center;
+            margin-top: 10px;
         }
         
         .control-btn {
@@ -101,6 +98,8 @@
             cursor: pointer;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            /* 추가: 더블탭 줌 방지 */
         }
         
         .control-btn:active {
@@ -116,7 +115,7 @@
                 display: flex;
             }
             #game-container {
-                margin-bottom: 100px;
+                margin-bottom: 10px;
             }
         }
     </style>
@@ -143,7 +142,7 @@
         const ctx = canvas.getContext('2d');
         const ROWS = 20;
         const COLS = 10;
-        const BLOCK_SIZE = 30;
+        let BLOCK_SIZE = 30;
         const COLORS = ['#FF0D72', '#0DC2FF', '#0DFF72', '#F538FF', '#FF8E0D', '#FFE138', '#3877FF'];
 
         let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
@@ -415,22 +414,55 @@
 
         document.getElementById('restart-button').addEventListener('click', restartGame);
 
-        document.addEventListener('keydown', event => {
-            switch (event.keyCode) {
-                case 37:
-                    moveLeft();
-                    break;
-                case 39:
-                    moveRight();
-                    break;
-                case 40:
-                    moveDown();
-                    break;
-                case 38:
-                    rotate();
-                    break;
+        // 모바일 컨트롤 이벤트 리스너 수정
+        function addMobileControls() {
+            const controls = {
+                'left-btn': moveLeft,
+                'right-btn': moveRight,
+                'down-btn': moveDown,
+                'rotate-btn': rotate
+            };
+
+            for (const [btnId, action] of Object.entries(controls)) {
+                const btn = document.getElementById(btnId);
+                let intervalId = null;
+
+                btn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    action();
+                    intervalId = setInterval(action, 150);
+                });
+
+                btn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    clearInterval(intervalId);
+                });
+
+                // 클릭 이벤트 추가
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    action();
+                });
             }
-            draw();
+        }
+
+        // 페이지 로드 시 모바일 컨트롤 추가
+        window.addEventListener('load', addMobileControls);
+
+        // 기본 터치 동작 방지
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.classList.contains('control-btn')) {
+                e.preventDefault();
+            }
+        }, {
+            passive: false
+        });
+
+        // 더블탭 줌 방지
+        document.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+        }, {
+            passive: false
         });
 
         let gameInterval = setInterval(() => {
