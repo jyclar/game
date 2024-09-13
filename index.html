@@ -77,6 +77,30 @@
         #restart-button:hover {
             background-color: #45a049;
         }
+        
+        #mobile-controls {
+            display: none;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            margin: 0 10px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            #mobile-controls {
+                display: flex;
+            }
+        }
     </style>
 </head>
 
@@ -88,6 +112,23 @@
         </div>
         <canvas id="game-board" width="300" height="600"></canvas>
         <div id="game-over">GAME OVER</div>
+        <div id="mobile-controls">
+            <button class="control-btn" id="left-btn">←</button>
+            <button class="control-btn" id="rotate-btn">↻</button>
+            <button class="control-btn" id="right-btn">→</button>
+            <button class="control-btn" id="down-btn">↓</button>
+        </div>
+    </div>
+    <div id="game-instructions">
+        <h2>게임 방법</h2>
+        <p>PC: 방향키를 사용하여 블록을 조작하세요.</p>
+        <p>스마트폰: 화면 하단의 버튼을 사용하여 블록을 조작하세요.</p>
+        <ul>
+            <li>← : 왼쪽으로 이동</li>
+            <li>→ : 오른쪽으로 이동</li>
+            <li>↓ : 아래로 이동</li>
+            <li>↻ : 블록 회전</li>
+        </ul>
     </div>
     <button id="restart-button" style="display: none;">다시 시작</button>
     <script>
@@ -381,6 +422,41 @@
                 case 38:
                     rotate();
                     break;
+            }
+            draw();
+        });
+
+        // 모바일 컨트롤 이벤트 리스너 추가
+        document.getElementById('left-btn').addEventListener('click', moveLeft);
+        document.getElementById('right-btn').addEventListener('click', moveRight);
+        document.getElementById('down-btn').addEventListener('click', moveDown);
+        document.getElementById('rotate-btn').addEventListener('click', rotate);
+
+        // 터치 이벤트 처리
+        let touchStartX, touchStartY;
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (deltaX > 0) {
+                    moveRight();
+                } else {
+                    moveLeft();
+                }
+            } else {
+                if (deltaY > 0) {
+                    moveDown();
+                } else {
+                    rotate();
+                }
             }
             draw();
         });
