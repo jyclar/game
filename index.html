@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테트리스 게임</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        #game-board {
+            border: 2px solid #ffffff;
+        }
+        
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 300px;
+            margin-bottom: 10px;
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.5s;
+        }
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+        
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 64px;
+            font-weight: bold;
+            color: red;
+            display: none;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        #restart-button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        
+        #restart-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container">
+        <div id="game-info">
+            <div id="score">점수: 0</div>
+            <div id="level">레벨: 1</div>
+        </div>
+        <canvas id="game-board" width="300" height="600"></canvas>
+        <div id="game-over">GAME OVER</div>
+    </div>
+    <button id="restart-button" style="display: none;">다시 시작</button>
+    <script>
+        const canvas = document.getElementById('game-board');
+        const ctx = canvas.getContext('2d');
+        const ROWS = 20;
+        const COLS = 10;
+        const BLOCK_SIZE = 30;
+        const COLORS = ['#FF0D72', '#0DC2FF', '#0DFF72', '#F538FF', '#FF8E0D', '#FFE138', '#3877FF'];
+
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let piece = getRandomPiece();
+
+        let score = 0;
+        let level = 1;
+        let linesCleared = 0;
+
+        function updateScore(rowsCleared) {
+            const baseScores = [0, 100, 300, 500, 800];
+            score += baseScores[rowsCleared] * level;
+            document.getElementById('score').textContent = `점수: ${score}`;
+        }
+
+        function updateLevel() {
+            if (linesCleared >= level * 10) {
+                level++;
+                document.getElementById('level').textContent = `레벨: ${level}`;
+                // 게임 속도 증가
+                clearInterval(gameInterval);
+                gameInterval = setInterval(() => {
+                    moveDown();
+                    draw();
+                }, Math.max(100, 500 - (level - 1) * 50)); // 최소 속도는 100ms
+            }
+        }
+
+        function removeRows() {
+            let rowsCleared = 0;
+            const rowsToRemove = [];
+
+            board.forEach((row, y) => {
+                if (row.every(value => value !== 0)) {
+                    rowsToRemove.push(y);
+                    rowsCleared++;
+                    linesCleared++;
+                }
+            });
+
+            if (rowsCleared > 0) {
+                animateRowRemoval(rowsToRemove).then(() => {
+                    rowsToRemove.forEach(y => {
+                        board.splice(y, 1);
+                        board.unshift(Array(COLS).fill(0));
+                    });
+                    updateScore(rowsCleared);
+                    updateLevel();
+                    draw();
+                });
+            }
+        }
+
+        function animateRowRemoval(rows) {
+            return new Promise(resolve => {
+                rows.forEach(y => {
+                    for (let x = 0; x < COLS; x++) {
+                        const block = document.createElement('div');
+                        block.style.position = 'absolute';
+                        block.style.left = `${x * BLOCK_SIZE}px`;
+                        block.style.top = `${y * BLOCK_SIZE}px`;
+                        block.style.width = `${BLOCK_SIZE}px`;
+                        block.style.height = `${BLOCK_SIZE}px`;
+                        block.style.backgroundColor = COLORS[board[y][x] - 1];
+                        block.classList.add('fade-out');
+                        canvas.parentNode.appendChild(block);
+                    }
+                });
+                setTimeout(() => {
+                    document.querySelectorAll('.fade-out').forEach(el => el.remove());
+                    resolve();
+                }, 500);
+            });
+        }
+
+        function getRandomPiece() {
+            const pieces = [{
+                    shape: [
+                        [1, 1, 1, 1]
+                    ],
+                    color: '#FF0D72'
+                }, // I
+                {
+                    shape: [
+                        [1, 1],
+                        [1, 1]
+                    ],
+                    color: '#0DC2FF'
+                }, // O
+                {
+                    shape: [
+                        [1, 1, 1],
+                        [0, 1, 0]
+                    ],
+                    color: '#0DFF72'
+                }, // T
+                {
+                    shape: [
+                        [1, 1, 1],
+                        [1, 0, 0]
+                    ],
+                    color: '#F538FF'
+                }, // L
+                {
+                    shape: [
+                        [1, 1, 1],
+                        [0, 0, 1]
+                    ],
+                    color: '#FF8E0D'
+                }, // J
+                {
+                    shape: [
+                        [1, 1, 0],
+                        [0, 1, 1]
+                    ],
+                    color: '#FFE138'
+                }, // S
+                {
+                    shape: [
+                        [0, 1, 1],
+                        [1, 1, 0]
+                    ],
+                    color: '#3877FF'
+                } // Z
+            ];
+            const randomPiece = pieces[Math.floor(Math.random() * pieces.length)];
+            return {
+                shape: randomPiece.shape,
+                color: randomPiece.color,
+                x: Math.floor(COLS / 2) - 1,
+                y: 0
+            };
+        }
+
+        function draw() {
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            board.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        ctx.fillStyle = COLORS[value - 1];
+                        ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                        ctx.strokeStyle = '#000000';
+                        ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    }
+                });
+            });
+
+            piece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        ctx.fillStyle = piece.color;
+                        ctx.fillRect((piece.x + x) * BLOCK_SIZE, (piece.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                        ctx.strokeStyle = '#000000';
+                        ctx.strokeRect((piece.x + x) * BLOCK_SIZE, (piece.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    }
+                });
+            });
+        }
+
+        function moveDown() {
+            piece.y++;
+            if (collision()) {
+                piece.y--;
+                merge();
+                removeRows();
+                piece = getRandomPiece();
+                if (collision()) {
+                    gameOver();
+                    return;
+                }
+            }
+            draw();
+        }
+
+        function moveLeft() {
+            piece.x--;
+            if (collision()) {
+                piece.x++;
+            }
+        }
+
+        function moveRight() {
+            piece.x++;
+            if (collision()) {
+                piece.x--;
+            }
+        }
+
+        function rotate() {
+            const rotated = piece.shape[0].map((_, i) => piece.shape.map(row => row[i]).reverse());
+            const prevShape = piece.shape;
+            piece.shape = rotated;
+            if (collision()) {
+                piece.shape = prevShape;
+            }
+        }
+
+        function collision() {
+            return piece.shape.some((row, y) =>
+                row.some((value, x) =>
+                    value && (board[piece.y + y] && board[piece.y + y][piece.x + x]) !== 0
+                )
+            );
+        }
+
+        function merge() {
+            piece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        board[piece.y + y][piece.x + x] = COLORS.indexOf(piece.color) + 1;
+                    }
+                });
+            });
+        }
+
+        function removeRows() {
+            let rowsCleared = 0;
+            const rowsToRemove = [];
+
+            board.forEach((row, y) => {
+                if (row.every(value => value !== 0)) {
+                    rowsToRemove.push(y);
+                    rowsCleared++;
+                    linesCleared++;
+                }
+            });
+
+            if (rowsCleared > 0) {
+                animateRowRemoval(rowsToRemove).then(() => {
+                    rowsToRemove.forEach(y => {
+                        board.splice(y, 1);
+                        board.unshift(Array(COLS).fill(0));
+                    });
+                    updateScore(rowsCleared);
+                    updateLevel();
+                    draw();
+                });
+            }
+        }
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            const gameOverElement = document.getElementById('game-over');
+            const restartButton = document.getElementById('restart-button');
+            gameOverElement.style.display = 'block';
+            restartButton.style.display = 'block';
+            gameOverElement.style.animation = 'fadeIn 1s';
+            restartButton.style.animation = 'fadeIn 1s';
+        }
+
+        function restartGame() {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            piece = getRandomPiece();
+            score = 0;
+            level = 1;
+            linesCleared = 0;
+            updateScore(0);
+            updateLevel();
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('restart-button').style.display = 'none';
+            gameInterval = setInterval(() => {
+                moveDown();
+                draw();
+            }, 500);
+            draw();
+        }
+
+        document.getElementById('restart-button').addEventListener('click', restartGame);
+
+        document.addEventListener('keydown', event => {
+            switch (event.keyCode) {
+                case 37:
+                    moveLeft();
+                    break;
+                case 39:
+                    moveRight();
+                    break;
+                case 40:
+                    moveDown();
+                    break;
+                case 38:
+                    rotate();
+                    break;
+            }
+            draw();
+        });
+
+        let gameInterval = setInterval(() => {
+            moveDown();
+            draw();
+        }, 500);
+
+        draw();
+    </script>
+</body>
+
+</html>
