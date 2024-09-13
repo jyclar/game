@@ -18,3 +18,12 @@
 
 ## 게임 화면
 
+![테트리스 게임 화면](images/tetris_screenshot.png)
+
+## 제작에 이용된 기술
+
+1. HTML
+2. CSS
+3. JavaScript
+
+
