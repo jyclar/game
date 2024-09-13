@@ -80,8 +80,12 @@
         
         #mobile-controls {
             display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
             justify-content: center;
-            margin-top: 20px;
+            align-items: center;
         }
         
         .control-btn {
@@ -89,16 +93,25 @@
             height: 60px;
             margin: 0 10px;
             font-size: 24px;
-            background-color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.7);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 50%;
             cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .control-btn:active {
+            background-color: rgba(76, 175, 80, 1);
         }
         
         @media (max-width: 768px) {
             #mobile-controls {
                 display: flex;
+            }
+            #game-container {
+                margin-bottom: 100px;
             }
         }
     </style>
@@ -112,23 +125,12 @@
         </div>
         <canvas id="game-board" width="300" height="600"></canvas>
         <div id="game-over">GAME OVER</div>
-        <div id="mobile-controls">
-            <button class="control-btn" id="left-btn">←</button>
-            <button class="control-btn" id="rotate-btn">↻</button>
-            <button class="control-btn" id="right-btn">→</button>
-            <button class="control-btn" id="down-btn">↓</button>
-        </div>
     </div>
-    <div id="game-instructions">
-        <h2>게임 방법</h2>
-        <p>PC: 방향키를 사용하여 블록을 조작하세요.</p>
-        <p>스마트폰: 화면 하단의 버튼을 사용하여 블록을 조작하세요.</p>
-        <ul>
-            <li>← : 왼쪽으로 이동</li>
-            <li>→ : 오른쪽으로 이동</li>
-            <li>↓ : 아래로 이동</li>
-            <li>↻ : 블록 회전</li>
-        </ul>
+    <div id="mobile-controls">
+        <button class="control-btn" id="left-btn">←</button>
+        <button class="control-btn" id="down-btn">↓</button>
+        <button class="control-btn" id="rotate-btn">↻</button>
+        <button class="control-btn" id="right-btn">→</button>
     </div>
     <button id="restart-button" style="display: none;">다시 시작</button>
     <script>
@@ -422,41 +424,6 @@
                 case 38:
                     rotate();
                     break;
-            }
-            draw();
-        });
-
-        // 모바일 컨트롤 이벤트 리스너 추가
-        document.getElementById('left-btn').addEventListener('click', moveLeft);
-        document.getElementById('right-btn').addEventListener('click', moveRight);
-        document.getElementById('down-btn').addEventListener('click', moveDown);
-        document.getElementById('rotate-btn').addEventListener('click', rotate);
-
-        // 터치 이벤트 처리
-        let touchStartX, touchStartY;
-        canvas.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        });
-
-        canvas.addEventListener('touchend', (e) => {
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
-            const deltaX = touchEndX - touchStartX;
-            const deltaY = touchEndY - touchStartY;
-
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                if (deltaX > 0) {
-                    moveRight();
-                } else {
-                    moveLeft();
-                }
-            } else {
-                if (deltaY > 0) {
-                    moveDown();
-                } else {
-                    rotate();
-                }
             }
             draw();
         });
