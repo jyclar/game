@@ -10,6 +10,7 @@
             background-color: #1a1a1a;
             color: #ffffff;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -107,6 +108,10 @@
         }
         
         @media (max-width: 768px) {
+            #game-board {
+                width: 240px;
+                height: 400px;
+            }
             #mobile-controls {
                 display: flex;
             }
