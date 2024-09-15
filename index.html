@@ -38,8 +38,9 @@
             display: none;
             flex-direction: column;
             align-items: center;
-            max-width: 100%;
-            max-height: 100vh;
+            justify-content: center;
+            width: 100%;
+            height: 100vh;
         }
         
         #game-board {
@@ -50,14 +51,16 @@
             display: flex;
             justify-content: space-between;
             width: 100%;
-            margin-bottom: 10px;
+            padding: 10px;
+            box-sizing: border-box;
         }
         
         #mobile-controls {
             display: none;
             justify-content: center;
-            margin-top: 10px;
             width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
         }
         
         .control-btn {
@@ -97,19 +100,18 @@
         
         @media (max-width: 768px) {
             #game-container {
-                width: 100%;
-                height: 100vh;
                 justify-content: space-between;
             }
             #game-board {
-                max-height: calc(100vh - 150px);
+                max-height: calc(100vh - 120px);
             }
             #mobile-controls {
                 display: flex;
                 position: fixed;
-                bottom: 20px;
+                bottom: 0;
                 left: 0;
                 right: 0;
+                background-color: rgba(0, 0, 0, 0.5);
             }
         }
     </style>
@@ -145,23 +147,28 @@
 
         let board, piece, score, level, linesCleared, gameInterval;
 
+        const backgroundColors = [
+            '#1a1a1a', '#2a2a2a', '#3a3a3a', '#4a4a4a', '#5a5a5a',
+            '#6a6a6a', '#7a7a7a', '#8a8a8a', '#9a9a9a', '#aaaaaa'
+        ];
+
         function resizeGame() {
             const containerWidth = window.innerWidth;
             const containerHeight = window.innerHeight;
             const aspectRatio = 2 / 3; // 테트리스 보드의 세로:가로 비율
 
             if (containerWidth / containerHeight > aspectRatio) {
-                canvas.height = containerHeight * 0.8;
+                canvas.height = containerHeight;
                 canvas.width = canvas.height * aspectRatio;
             } else {
-                canvas.width = containerWidth * 0.8;
+                canvas.width = containerWidth;
                 canvas.height = canvas.width / aspectRatio;
             }
 
             // 모바일 환경에서 게임 보드 크기 조정
             if (containerWidth <= 768) {
-                canvas.width = containerWidth * 0.9;
-                canvas.height = Math.min(containerHeight * 0.7, canvas.width / aspectRatio);
+                canvas.width = containerWidth;
+                canvas.height = containerHeight - 120; // 컨트롤 영역 고려
             }
 
             BLOCK_SIZE = Math.floor(canvas.width / 10);
@@ -371,6 +378,8 @@
             if (linesCleared >= level * 10) {
                 level++;
                 document.getElementById('level').textContent = `레벨: ${level}`;
+                // 배경색 변경
+                document.body.style.backgroundColor = backgroundColors[Math.min(level - 1, backgroundColors.length - 1)];
                 // 게임 속도 증가
                 clearInterval(gameInterval);
                 gameInterval = setInterval(() => {
