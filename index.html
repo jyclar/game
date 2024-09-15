@@ -7,82 +7,53 @@
     <title>테트리스 게임</title>
     <style>
         body {
-            background-color: #1a1a1a;
-            color: #ffffff;
+            margin: 0;
+            padding: 0;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
             font-family: Arial, sans-serif;
+        }
+        
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('start.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: pointer;
+        }
+        
+        #game-container {
+            display: none;
+            max-width: 100%;
+            max-height: 100vh;
         }
         
         #game-board {
             border: 2px solid #ffffff;
         }
         
-        #game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
         #game-info {
             display: flex;
             justify-content: space-between;
-            width: 300px;
+            width: 100%;
             margin-bottom: 10px;
-        }
-        
-        .fade-out {
-            animation: fadeOut 0.5s;
-        }
-        
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-            }
-            to {
-                opacity: 0;
-            }
-        }
-        
-        #game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 64px;
-            font-weight: bold;
-            color: red;
-            display: none;
-            text-align: center;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        
-        #restart-button {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            font-size: 18px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        
-        #restart-button:hover {
-            background-color: #45a049;
         }
         
         #mobile-controls {
             display: none;
             justify-content: center;
-            align-items: center;
             margin-top: 10px;
         }
         
@@ -96,39 +67,30 @@
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-            /* 추가: 더블탭 줌 방지 */
-        }
-        
-        .control-btn:active {
-            background-color: rgba(76, 175, 80, 1);
         }
         
         @media (max-width: 768px) {
             #game-board {
-                width: 240px;
-                height: 400px;
+                width: 100%;
+                height: auto;
             }
             #mobile-controls {
                 display: flex;
-            }
-            #game-container {
-                margin-bottom: 10px;
             }
         }
     </style>
 </head>
 
 <body>
+    <div id="start-screen"></div>
+
     <div id="game-container">
         <div id="game-info">
             <div id="score">점수: 0</div>
             <div id="level">레벨: 1</div>
         </div>
-        <canvas id="game-board" width="300" height="600"></canvas>
-        <div id="game-over">GAME OVER</div>
+        <canvas id="game-board"></canvas>
+        <div id="game-over" style="display: none;">GAME OVER</div>
     </div>
     <div id="mobile-controls">
         <button class="control-btn" id="left-btn">←</button>
@@ -136,86 +98,59 @@
         <button class="control-btn" id="rotate-btn">↻</button>
         <button class="control-btn" id="right-btn">→</button>
     </div>
-    <button id="restart-button" style="display: none;">다시 시작</button>
+
     <script>
         const canvas = document.getElementById('game-board');
         const ctx = canvas.getContext('2d');
-        const ROWS = 20;
-        const COLS = 10;
-        let BLOCK_SIZE = 30;
+        let BLOCK_SIZE, ROWS, COLS;
         const COLORS = ['#FF0D72', '#0DC2FF', '#0DFF72', '#F538FF', '#FF8E0D', '#FFE138', '#3877FF'];
 
-        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
-        let piece = getRandomPiece();
+        let board, piece, score, level, linesCleared, gameInterval;
 
-        let score = 0;
-        let level = 1;
-        let linesCleared = 0;
+        function resizeGame() {
+            const containerWidth = window.innerWidth;
+            const containerHeight = window.innerHeight;
+            const aspectRatio = 2 / 3; // 테트리스 보드의 세로:가로 비율
 
-        function updateScore(rowsCleared) {
-            const baseScores = [0, 100, 300, 500, 800];
-            score += baseScores[rowsCleared] * level;
-            document.getElementById('score').textContent = `점수: ${score}`;
-        }
+            if (containerWidth / containerHeight > aspectRatio) {
+                canvas.height = containerHeight * 0.8;
+                canvas.width = canvas.height * aspectRatio;
+            } else {
+                canvas.width = containerWidth * 0.8;
+                canvas.height = canvas.width / aspectRatio;
+            }
 
-        function updateLevel() {
-            if (linesCleared >= level * 10) {
-                level++;
-                document.getElementById('level').textContent = `레벨: ${level}`;
-                // 게임 속도 증가
-                clearInterval(gameInterval);
-                gameInterval = setInterval(() => {
-                    moveDown();
-                    draw();
-                }, Math.max(100, 500 - (level - 1) * 50)); // 최소 속도는 100ms
+            BLOCK_SIZE = Math.floor(canvas.width / 10);
+            ROWS = Math.floor(canvas.height / BLOCK_SIZE);
+            COLS = Math.floor(canvas.width / BLOCK_SIZE);
+
+            if (board) {
+                draw(); // 게임이 이미 시작된 경우 다시 그리기
             }
         }
 
-        function removeRows() {
-            let rowsCleared = 0;
-            const rowsToRemove = [];
-
-            board.forEach((row, y) => {
-                if (row.every(value => value !== 0)) {
-                    rowsToRemove.push(y);
-                    rowsCleared++;
-                    linesCleared++;
-                }
-            });
-
-            if (rowsCleared > 0) {
-                animateRowRemoval(rowsToRemove).then(() => {
-                    rowsToRemove.forEach(y => {
-                        board.splice(y, 1);
-                        board.unshift(Array(COLS).fill(0));
-                    });
-                    updateScore(rowsCleared);
-                    updateLevel();
-                    draw();
-                });
-            }
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            resizeGame();
+            restartGame();
         }
 
-        function animateRowRemoval(rows) {
-            return new Promise(resolve => {
-                rows.forEach(y => {
-                    for (let x = 0; x < COLS; x++) {
-                        const block = document.createElement('div');
-                        block.style.position = 'absolute';
-                        block.style.left = `${x * BLOCK_SIZE}px`;
-                        block.style.top = `${y * BLOCK_SIZE}px`;
-                        block.style.width = `${BLOCK_SIZE}px`;
-                        block.style.height = `${BLOCK_SIZE}px`;
-                        block.style.backgroundColor = COLORS[board[y][x] - 1];
-                        block.classList.add('fade-out');
-                        canvas.parentNode.appendChild(block);
-                    }
-                });
-                setTimeout(() => {
-                    document.querySelectorAll('.fade-out').forEach(el => el.remove());
-                    resolve();
-                }, 500);
-            });
+        function restartGame() {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            piece = getRandomPiece();
+            score = 0;
+            level = 1;
+            linesCleared = 0;
+            updateScore(0);
+            updateLevel();
+            document.getElementById('game-over').style.display = 'none';
+            clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                moveDown();
+                draw();
+            }, 500);
+            draw();
         }
 
         function getRandomPiece() {
@@ -324,6 +259,7 @@
             if (collision()) {
                 piece.x++;
             }
+            draw();
         }
 
         function moveRight() {
@@ -331,6 +267,7 @@
             if (collision()) {
                 piece.x--;
             }
+            draw();
         }
 
         function rotate() {
@@ -340,12 +277,18 @@
             if (collision()) {
                 piece.shape = prevShape;
             }
+            draw();
         }
 
         function collision() {
             return piece.shape.some((row, y) =>
                 row.some((value, x) =>
-                    value && (board[piece.y + y] && board[piece.y + y][piece.x + x]) !== 0
+                    value && (
+                        piece.y + y >= ROWS ||
+                        piece.x + x < 0 ||
+                        piece.x + x >= COLS ||
+                        (board[piece.y + y] && board[piece.y + y][piece.x + x]) !== 0
+                    )
                 )
             );
         }
@@ -362,115 +305,88 @@
 
         function removeRows() {
             let rowsCleared = 0;
-            const rowsToRemove = [];
-
             board.forEach((row, y) => {
                 if (row.every(value => value !== 0)) {
-                    rowsToRemove.push(y);
+                    board.splice(y, 1);
+                    board.unshift(Array(COLS).fill(0));
                     rowsCleared++;
                     linesCleared++;
                 }
             });
+            updateScore(rowsCleared);
+            updateLevel();
+        }
 
-            if (rowsCleared > 0) {
-                animateRowRemoval(rowsToRemove).then(() => {
-                    rowsToRemove.forEach(y => {
-                        board.splice(y, 1);
-                        board.unshift(Array(COLS).fill(0));
-                    });
-                    updateScore(rowsCleared);
-                    updateLevel();
+        function updateScore(rowsCleared) {
+            const baseScores = [0, 100, 300, 500, 800];
+            score += baseScores[rowsCleared] * level;
+            document.getElementById('score').textContent = `점수: ${score}`;
+        }
+
+        function updateLevel() {
+            if (linesCleared >= level * 10) {
+                level++;
+                document.getElementById('level').textContent = `레벨: ${level}`;
+                // 게임 속도 증가
+                clearInterval(gameInterval);
+                gameInterval = setInterval(() => {
+                    moveDown();
                     draw();
-                });
+                }, Math.max(100, 500 - (level - 1) * 50)); // 최소 속도는 100ms
             }
         }
 
         function gameOver() {
             clearInterval(gameInterval);
-            const gameOverElement = document.getElementById('game-over');
-            const restartButton = document.getElementById('restart-button');
-            gameOverElement.style.display = 'block';
-            restartButton.style.display = 'block';
-            gameOverElement.style.animation = 'fadeIn 1s';
-            restartButton.style.animation = 'fadeIn 1s';
+            document.getElementById('game-over').style.display = 'block';
         }
 
-        function restartGame() {
-            board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
-            piece = getRandomPiece();
-            score = 0;
-            level = 1;
-            linesCleared = 0;
-            updateScore(0);
-            updateLevel();
-            document.getElementById('game-over').style.display = 'none';
-            document.getElementById('restart-button').style.display = 'none';
-            gameInterval = setInterval(() => {
-                moveDown();
-                draw();
-            }, 500);
-            draw();
-        }
-
-        document.getElementById('restart-button').addEventListener('click', restartGame);
-
-        // 모바일 컨트롤 이벤트 리스너 수정
         function addMobileControls() {
-            const controls = {
-                'left-btn': moveLeft,
-                'right-btn': moveRight,
-                'down-btn': moveDown,
-                'rotate-btn': rotate
-            };
+            const leftBtn = document.getElementById('left-btn');
+            const downBtn = document.getElementById('down-btn');
+            const rotateBtn = document.getElementById('rotate-btn');
+            const rightBtn = document.getElementById('right-btn');
 
-            for (const [btnId, action] of Object.entries(controls)) {
-                const btn = document.getElementById(btnId);
-                let intervalId = null;
-
-                btn.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    action();
-                    intervalId = setInterval(action, 150);
-                });
-
-                btn.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    clearInterval(intervalId);
-                });
-
-                // 클릭 이벤트 추가
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    action();
-                });
-            }
+            leftBtn.addEventListener('touchstart', moveLeft);
+            downBtn.addEventListener('touchstart', moveDown);
+            rotateBtn.addEventListener('touchstart', rotate);
+            rightBtn.addEventListener('touchstart', moveRight);
         }
 
-        // 페이지 로드 시 모바일 컨트롤 추가
-        window.addEventListener('load', addMobileControls);
+        // 이벤트 리스너 추가
+        document.getElementById('start-screen').addEventListener('click', startGame);
+        window.addEventListener('resize', resizeGame);
 
-        // 기본 터치 동작 방지
-        document.addEventListener('touchmove', function(e) {
-            if (e.target.classList.contains('control-btn')) {
-                e.preventDefault();
+        // 키보드 컨트롤 추가
+        document.addEventListener('keydown', event => {
+            if (!gameInterval) return; // 게임이 시작되지 않았으면 키 입력 무시
+            switch (event.keyCode) {
+                case 37: // 왼쪽 화살표
+                    moveLeft();
+                    break;
+                case 39: // 오른쪽 화살표
+                    moveRight();
+                    break;
+                case 40: // 아래쪽 화살표
+                    moveDown();
+                    break;
+                case 38: // 위쪽 화살표
+                    rotate();
+                    break;
             }
-        }, {
-            passive: false
         });
 
-        // 더블탭 줌 방지
-        document.addEventListener('dblclick', function(e) {
-            e.preventDefault();
-        }, {
-            passive: false
+        // 페이지 로드 시 실행
+        window.addEventListener('load', () => {
+            resizeGame();
+            addMobileControls();
         });
 
-        let gameInterval = setInterval(() => {
-            moveDown();
-            draw();
-        }, 500);
-
-        draw();
+        // start.png 이미지 로드 확인
+        const startScreenBg = new Image();
+        startScreenBg.onload = () => console.log('Start screen image loaded');
+        startScreenBg.onerror = () => console.error('Failed to load start screen image');
+        startScreenBg.src = 'start.png';
     </script>
 </body>
 
