@@ -50,7 +50,7 @@
         #game-info {
             display: flex;
             justify-content: space-between;
-            width: 100%;
+            width: 95%;
             padding: 10px;
             box-sizing: border-box;
         }
@@ -100,15 +100,16 @@
         
         @media (max-width: 768px) {
             #game-container {
-                justify-content: space-between;
+                justify-content: flex-start;
+                padding-top: 10vh;
             }
             #game-board {
-                max-height: calc(100vh - 120px);
+                max-height: calc(80vh - 100px);
             }
             #mobile-controls {
                 display: flex;
                 position: fixed;
-                bottom: 0;
+                bottom: 20px;
                 left: 0;
                 right: 0;
                 background-color: rgba(0, 0, 0, 0.5);
@@ -158,17 +159,17 @@
             const aspectRatio = 2 / 3; // 테트리스 보드의 세로:가로 비율
 
             if (containerWidth / containerHeight > aspectRatio) {
-                canvas.height = containerHeight;
+                canvas.height = containerHeight * 0.75;
                 canvas.width = canvas.height * aspectRatio;
             } else {
-                canvas.width = containerWidth;
+                canvas.width = containerWidth * 0.95;
                 canvas.height = canvas.width / aspectRatio;
             }
 
             // 모바일 환경에서 게임 보드 크기 조정
             if (containerWidth <= 768) {
-                canvas.width = containerWidth;
-                canvas.height = containerHeight - 120; // 컨트롤 영역 고려
+                canvas.width = containerWidth * 0.95;
+                canvas.height = Math.min(containerHeight * 0.7, canvas.width / aspectRatio);
             }
 
             BLOCK_SIZE = Math.floor(canvas.width / 10);
