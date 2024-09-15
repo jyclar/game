@@ -36,6 +36,8 @@
         
         #game-container {
             display: none;
+            flex-direction: column;
+            align-items: center;
             max-width: 100%;
             max-height: 100vh;
         }
@@ -55,6 +57,7 @@
             display: none;
             justify-content: center;
             margin-top: 10px;
+            width: 100%;
         }
         
         .control-btn {
@@ -69,13 +72,44 @@
             cursor: pointer;
         }
         
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        
+        #restart-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        
         @media (max-width: 768px) {
-            #game-board {
+            #game-container {
                 width: 100%;
-                height: auto;
+                height: 100vh;
+                justify-content: space-between;
+            }
+            #game-board {
+                max-height: calc(100vh - 150px);
             }
             #mobile-controls {
                 display: flex;
+                position: fixed;
+                bottom: 20px;
+                left: 0;
+                right: 0;
             }
         }
     </style>
@@ -90,7 +124,11 @@
             <div id="level">레벨: 1</div>
         </div>
         <canvas id="game-board"></canvas>
-        <div id="game-over" style="display: none;">GAME OVER</div>
+        <div id="game-over">
+            GAME OVER
+            <br>
+            <button id="restart-button">RESTART</button>
+        </div>
     </div>
     <div id="mobile-controls">
         <button class="control-btn" id="left-btn">←</button>
@@ -120,6 +158,12 @@
                 canvas.height = canvas.width / aspectRatio;
             }
 
+            // 모바일 환경에서 게임 보드 크기 조정
+            if (containerWidth <= 768) {
+                canvas.width = containerWidth * 0.9;
+                canvas.height = Math.min(containerHeight * 0.7, canvas.width / aspectRatio);
+            }
+
             BLOCK_SIZE = Math.floor(canvas.width / 10);
             ROWS = Math.floor(canvas.height / BLOCK_SIZE);
             COLS = Math.floor(canvas.width / BLOCK_SIZE);
@@ -137,6 +181,7 @@
         }
 
         function restartGame() {
+            document.getElementById('game-over').style.display = 'none';
             board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
             piece = getRandomPiece();
             score = 0;
@@ -144,7 +189,6 @@
             linesCleared = 0;
             updateScore(0);
             updateLevel();
-            document.getElementById('game-over').style.display = 'none';
             clearInterval(gameInterval);
             gameInterval = setInterval(() => {
                 moveDown();
@@ -355,6 +399,7 @@
 
         // 이벤트 리스너 추가
         document.getElementById('start-screen').addEventListener('click', startGame);
+        document.getElementById('restart-button').addEventListener('click', restartGame);
         window.addEventListener('resize', resizeGame);
 
         // 키보드 컨트롤 추가
