@@ -153,10 +153,10 @@
         function resizeGame() {
             const containerWidth = window.innerWidth;
             const containerHeight = window.innerHeight;
-            const aspectRatio = 1 / 2; // 테트리스 보드의 세로:가로 비율 (더 길게 조정)
+            const aspectRatio = 2 / 3; // 테트리스 보드의 세로:가로 비율 (1단계 짧게 조정)
 
             if (containerWidth / containerHeight > aspectRatio) {
-                canvas.height = containerHeight * 0.9;
+                canvas.height = containerHeight * 0.85;
                 canvas.width = canvas.height * aspectRatio;
             } else {
                 canvas.width = containerWidth * 0.95;
@@ -166,7 +166,7 @@
             // 모바일 환경에서 게임 보드 크기 조정
             if (containerWidth <= 768) {
                 canvas.width = containerWidth * 0.95;
-                canvas.height = Math.min(containerHeight * 0.85, canvas.width / aspectRatio);
+                canvas.height = Math.min(containerHeight * 0.8, canvas.width / aspectRatio);
             }
 
             BLOCK_SIZE = Math.floor(canvas.width / 10);
