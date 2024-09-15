@@ -182,13 +182,12 @@
 
         function startGame() {
             document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('game-container').style.display = 'block';
+            document.getElementById('game-container').style.display = 'flex';
             resizeGame();
             restartGame();
         }
 
         function restartGame() {
-            document.getElementById('game-over').style.display = 'none';
             board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
             piece = getRandomPiece();
             score = 0;
@@ -196,6 +195,7 @@
             linesCleared = 0;
             updateScore(0);
             updateLevel();
+            document.getElementById('game-over').style.display = 'none';
             clearInterval(gameInterval);
             gameInterval = setInterval(() => {
                 moveDown();
